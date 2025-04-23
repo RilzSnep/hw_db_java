@@ -1,19 +1,23 @@
 package ru.hogwarts.school.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "student")
 public class Student {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
+
     private int age;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "faculty_id")
-    @JsonIgnore
+    @JsonBackReference
     private Faculty faculty;
 
     public Student() {
@@ -26,6 +30,7 @@ public class Student {
         this.faculty = faculty;
     }
 
+    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }
