@@ -24,16 +24,16 @@ public class FacultyService {
     }
 
     public Faculty getFaculty(Long id) {
-        return facultyRepository.findById(id).orElse(null);
+        return facultyRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Факультет с ID " + id + " не найден"));
     }
 
     public Faculty updateFaculty(Faculty faculty) {
-        if (facultyRepository.existsById(faculty.getId())) {
-            return facultyRepository.save(faculty);
+        if (!facultyRepository.existsById(faculty.getId())) {
+            throw new IllegalArgumentException("Факультет с ID " + faculty.getId() + " не найден");
         }
-        return null;
+        return facultyRepository.save(faculty);
     }
-
     public void deleteFaculty(Long id) {
         facultyRepository.deleteById(id);
     }

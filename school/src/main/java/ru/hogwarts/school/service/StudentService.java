@@ -21,17 +21,21 @@ public class StudentService {
     }
 
     public Student getStudent(Long id) {
-        return studentRepository.findById(id).orElse(null);
+        return studentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Студент с ID " + id + " не найден"));
     }
 
     public Student updateStudent(Student student) {
-        if (studentRepository.existsById(student.getId())) {
-            return studentRepository.save(student);
+        if (!studentRepository.existsById(student.getId())) {
+            throw new IllegalArgumentException("Студент с ID " + student.getId() + " не найден");
         }
-        return null;
+        return studentRepository.save(student);
     }
 
     public void deleteStudent(Long id) {
+        if (!studentRepository.existsById(id)) {
+            throw new IllegalArgumentException("Студент с ID " + id + " не найден");
+        }
         studentRepository.deleteById(id);
     }
 
@@ -48,7 +52,25 @@ public class StudentService {
     }
 
     public Faculty getFacultyByStudentId(Long studentId) {
-        Student student = studentRepository.findById(studentId).orElse(null);
-        return student != null ? student.getFaculty() : null;
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("Студент с ID " + studentId + " не найден"));
+        if (student.getFaculty() == null) {
+            throw new IllegalStateException("У студента с ID " + studentId + " не указан факультет");
+        }
+        return student.getFaculty();
+    }
+
+    // Методы для SQL-запросов
+    public int getTotalStudentsCount() {
+        return studentRepository.getTotalStudentsCount();
+    }
+
+    public double getAverageAge() {
+        return studentRepository.getAverageAge();
+    }
+
+    public List<Student> getLastFiveStudents() {
+        List<Student> lastStudents = studentRepository.findLastFiveStudents();
+        return lastStudents.size() > 5 ? lastStudents.subList(0, 5) : lastStudents;
     }
 }
