@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: classpath:liquibase/changelog/2025-05-21-initial-schema.yml
+  - include:
+      file: classpath:liquibase/changelog/2025-05-21-lesson-three-indexes.yml
+  - include:
+      file: classpath:liquibase/changelog/2025-05-21-create-avatar.yml

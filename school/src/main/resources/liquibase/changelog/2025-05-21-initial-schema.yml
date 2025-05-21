@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-student-table-2025-05-21
+      author: student
+      changes:
+        - createTable:
+            tableName: student
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: age
+                  type: int
+              - column:
+                  name: faculty_id
+                  type: bigint
+  - changeSet:
+      id: create-faculty-table-2025-05-21
+      author: student
+      changes:
+        - createTable:
+            tableName: faculty
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: color
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
