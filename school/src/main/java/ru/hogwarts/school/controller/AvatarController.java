@@ -1,9 +1,7 @@
 package ru.hogwarts.school.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Avatar;
 import ru.hogwarts.school.service.AvatarService;
 import org.springframework.data.domain.Page;
@@ -15,6 +13,29 @@ public class AvatarController {
 
     public AvatarController(AvatarService avatarService) {
         this.avatarService = avatarService;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Avatar createAvatar(@RequestBody Avatar avatar) {
+        return avatarService.createAvatar(avatar);
+    }
+
+    @GetMapping("/{id}")
+    public Avatar getAvatar(@PathVariable Long id) {
+        return avatarService.getAvatar(id);
+    }
+
+    @PutMapping("/{id}")
+    public Avatar updateAvatar(@PathVariable Long id, @RequestBody Avatar avatar) {
+        avatar.setId(id);
+        return avatarService.updateAvatar(avatar);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAvatar(@PathVariable Long id) {
+        avatarService.deleteAvatar(id);
     }
 
     @GetMapping

@@ -1,5 +1,6 @@
 package ru.hogwarts.school.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
@@ -17,6 +18,7 @@ public class StudentController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public Student createStudent(@RequestBody Student student) {
         return studentService.createStudent(student);
     }
@@ -26,12 +28,14 @@ public class StudentController {
         return studentService.getStudent(id);
     }
 
-    @PutMapping
-    public Student updateStudent(@RequestBody Student student) {
+    @PutMapping("/{id}")
+    public Student updateStudent(@PathVariable Long id, @RequestBody Student student) {
+        student.setId(id);
         return studentService.updateStudent(student);
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
     }
