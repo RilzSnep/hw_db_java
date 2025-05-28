@@ -8,6 +8,7 @@ import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.StudentRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentService {
@@ -24,7 +25,7 @@ public class StudentService {
     public Student createStudent(Student student) {
         logger.info("Was invoked method for create student");
         logger.debug("Creating student with name: {}", student.getName());
-        student.setId(null); // Сбрасываем ID для создания новой записи
+        student.setId(null);
         return studentRepository.save(student);
     }
 
@@ -108,5 +109,30 @@ public class StudentService {
         logger.info("Was invoked method for get last five students");
         logger.debug("Retrieving last five students by ID");
         return studentRepository.findLastFiveStudents();
+    }
+
+    public List<String> getNamesStartingWithA() {
+        logger.info("Was invoked method for get names starting with A");
+        logger.debug("Filtering and sorting student names starting with A");
+        return studentRepository.findAll().stream()
+                .map(Student::getName)
+                .filter(name -> name.startsWith("А"))
+                .map(String::toUpperCase)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public double calculateAverageAgeUsingStream() {
+        logger.info("Was invoked method for calculate average age using stream");
+        logger.debug("Calculating average age using stream");
+        List<Student> students = studentRepository.findAll();
+        if (students.isEmpty()) {
+            logger.warn("No students found for calculating average age");
+            return 0.0;
+        }
+        return students.stream()
+                .mapToInt(Student::getAge)
+                .average()
+                .orElse(0.0);
     }
 }

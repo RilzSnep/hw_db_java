@@ -23,7 +23,7 @@ public class FacultyService {
     public Faculty createFaculty(Faculty faculty) {
         logger.info("Was invoked method for create faculty");
         logger.debug("Creating faculty with name: {}", faculty.getName());
-        faculty.setId(null); // Сбрасываем ID для создания новой записи
+        faculty.setId(null);
         return facultyRepository.save(faculty);
     }
 
@@ -85,5 +85,17 @@ public class FacultyService {
                 });
         logger.debug("Found students for faculty: {}", faculty.getName());
         return faculty.getStudents();
+    }
+
+    public String getLongestFacultyName() {
+        logger.info("Was invoked method for get longest faculty name");
+        logger.debug("Finding the longest faculty name");
+        return facultyRepository.findAll().stream()
+                .map(Faculty::getName)
+                .max((name1, name2) -> Integer.compare(name1.length(), name2.length()))
+                .orElseThrow(() -> {
+                    logger.error("No faculties found");
+                    return new IllegalStateException("Факультеты не найдены");
+                });
     }
 }
