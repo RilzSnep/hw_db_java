@@ -30,6 +30,14 @@ public class Student {
         this.faculty = faculty;
     }
 
+    // Новый конструктор без Faculty
+    public Student(Long id, String name, int age) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.faculty = null;
+    }
+
     // Геттеры и сеттеры
     public Long getId() {
         return id;

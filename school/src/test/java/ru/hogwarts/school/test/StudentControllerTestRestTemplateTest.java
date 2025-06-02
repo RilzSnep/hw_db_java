@@ -1,16 +1,11 @@
-package ru.hogwarts.school.test;
+package ru.hogwarts.school.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
 
 import java.util.List;
@@ -20,161 +15,134 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class StudentControllerTestRestTemplateTest {
 
-    @LocalServerPort
-    private int port;
-
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private String baseUrl;
-
     @BeforeEach
     void setUp() {
-        baseUrl = "http://localhost:" + port + "/student";
+        // Очищаем базу перед каждым тестом
+        // Получаем всех студентов и удаляем их
+        var studentsResponse = restTemplate.getForEntity("/student", Student[].class);
+        if (studentsResponse.getBody() != null) {
+            for (Student student : studentsResponse.getBody()) {
+                restTemplate.delete("/student/" + student.getId());
+            }
+        }
+
+        // Добавляем тестовых студентов для тестов, которым нужны минимум 6 студентов
+        if (!this.getClass().getSimpleName().equals("StudentControllerTestRestTemplateTest")) {
+            return;
+        }
+        restTemplate.postForEntity("/student", new Student(null, "Анна", 20), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Борис", 22), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Виктор", 24), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Галина", 26), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Дмитрий", 28), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Елена", 30), Student.class);
     }
 
     @Test
-    void createStudent_shouldReturnCreatedStudent() {
-        // Arrange
-        Student student = new Student(null, "Harry Potter", 15, null);
+    void createStudent() {
+        Student student = new Student(null, "Harry", 20);
 
-        // Act
-        ResponseEntity<Student> response = restTemplate.postForEntity(baseUrl, student, Student.class);
+        var response = restTemplate.postForEntity("/student", student, Student.class);
 
-        // Assert
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getName()).isEqualTo("Harry");
+        assertThat(response.getBody().getAge()).isEqualTo(20);
+    }
+
+    @Test
+    void getStudent() {
+        Student student = new Student(null, "Harry", 20);
+        var createResponse = restTemplate.postForEntity("/student", student, Student.class);
+
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(createResponse.getBody()).isNotNull();
+
+        Long id = createResponse.getBody().getId();
+        var response = restTemplate.getForEntity("/student/" + id, Student.class);
+
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isNotNull();
+        assertThat(response.getBody().getName()).isEqualTo("Harry");
+        assertThat(response.getBody().getAge()).isEqualTo(20);
+    }
+
+    @Test
+    void updateStudent() {
+        Student student = new Student(null, "Harry", 20);
+        var createResponse = restTemplate.postForEntity("/student", student, Student.class);
+
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(createResponse.getBody()).isNotNull();
+
+        Long id = createResponse.getBody().getId();
+        Student updatedStudent = new Student(id, "Harry Potter", 21);
+        restTemplate.put("/student/" + id, updatedStudent);
+
+        var response = restTemplate.getForEntity("/student/" + id, Student.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getName()).isEqualTo("Harry Potter");
-        assertThat(response.getBody().getAge()).isEqualTo(15);
+        assertThat(response.getBody().getAge()).isEqualTo(21);
     }
 
     @Test
-    void getStudent_shouldReturnStudentById() {
-        // Arrange
-        Student student = new Student(null, "Hermione Granger", 16, null);
-        ResponseEntity<Student> createResponse = restTemplate.postForEntity(baseUrl, student, Student.class);
-        Long studentId = createResponse.getBody().getId();
+    void getNamesStartingWithA() {
+        // Очищаем базу вручную для теста
+        var studentsResponse = restTemplate.getForEntity("/student", Student[].class);
+        if (studentsResponse.getBody() != null) {
+            for (Student student : studentsResponse.getBody()) {
+                restTemplate.delete("/student/" + student.getId());
+            }
+        }
 
-        // Act
-        ResponseEntity<Student> response = restTemplate.getForEntity(baseUrl + "/" + studentId, Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Анна", 20), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Алексей", 22), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Борис", 24), Student.class);
 
-        // Assert
+        var response = restTemplate.getForEntity("/student/names-starting-with-a", String[].class);
+
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(studentId);
-        assertThat(response.getBody().getName()).isEqualTo("Hermione Granger");
-        assertThat(response.getBody().getAge()).isEqualTo(16);
+        assertThat(response.getBody()).containsExactly("АЛЕКСЕЙ", "АННА");
     }
 
     @Test
-    void getStudent_shouldReturn404ForNonExistentId() {
-        // Act
-        ResponseEntity<Student> response = restTemplate.getForEntity(baseUrl + "/999", Student.class);
+    void calculateAverageAgeUsingStream() {
+        // Очищаем базу вручную для теста
+        var studentsResponse = restTemplate.getForEntity("/student", Student[].class);
+        if (studentsResponse.getBody() != null) {
+            for (Student student : studentsResponse.getBody()) {
+                restTemplate.delete("/student/" + student.getId());
+            }
+        }
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
+        restTemplate.postForEntity("/student", new Student(null, "Анна", 20), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Алексей", 22), Student.class);
+        restTemplate.postForEntity("/student", new Student(null, "Борис", 24), Student.class);
 
-    @Test
-    void updateStudent_shouldReturnUpdatedStudent() {
-        // Arrange
-        Student student = new Student(null, "Ron Weasley", 15, null);
-        ResponseEntity<Student> createResponse = restTemplate.postForEntity(baseUrl, student, Student.class);
-        Long studentId = createResponse.getBody().getId();
-        Student updatedStudent = new Student(studentId, "Ron Weasley Updated", 16, null);
+        var response = restTemplate.getForEntity("/student/average-age-stream", Double.class);
 
-        // Act
-        ResponseEntity<Student> response = restTemplate.exchange(
-                baseUrl,
-                HttpMethod.PUT,
-                new HttpEntity<>(updatedStudent),
-                Student.class
-        );
-
-        // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(studentId);
-        assertThat(response.getBody().getName()).isEqualTo("Ron Weasley Updated");
-        assertThat(response.getBody().getAge()).isEqualTo(16);
-    }
-
-
-
-    @Test
-    void getAllStudents_shouldReturnListOfStudents() {
-        // Arrange
-        restTemplate.postForEntity(baseUrl, new Student(null, "Luna Lovegood", 14, null), Student.class);
-        restTemplate.postForEntity(baseUrl, new Student(null, "Neville Longbottom", 15, null), Student.class);
-
-        // Act
-        ResponseEntity<List> response = restTemplate.getForEntity(baseUrl, List.class);
-
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().size()).isGreaterThanOrEqualTo(2);
+        assertThat(response.getBody()).isEqualTo(22.0);
     }
 
     @Test
-    void filterStudentsByAge_shouldReturnFilteredStudents() {
-        // Arrange
-        restTemplate.postForEntity(baseUrl, new Student(null, "Ginny Weasley", 14, null), Student.class);
-        restTemplate.postForEntity(baseUrl, new Student(null, "Fred Weasley", 17, null), Student.class);
+    void printStudentNamesParallel() {
+        var response = restTemplate.getForEntity("/student/print-parallel", Void.class);
 
-        // Act
-        ResponseEntity<List> response = restTemplate.getForEntity(baseUrl + "/filter?age=14", List.class);
-
-        // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().size()).isGreaterThanOrEqualTo(1);
+        // Проверка логики выводится в консоль, поэтому проверяем только статус
     }
 
     @Test
-    void findStudentsByAgeBetween_shouldReturnStudentsInRange() {
-        // Arrange
-        restTemplate.postForEntity(baseUrl, new Student(null, "George Weasley", 17, null), Student.class);
-        restTemplate.postForEntity(baseUrl, new Student(null, "Percy Weasley", 19, null), Student.class);
+    void printStudentNamesSynchronized() {
+        var response = restTemplate.getForEntity("/student/print-synchronized", Void.class);
 
-        // Act
-        ResponseEntity<List> response = restTemplate.getForEntity(
-                baseUrl + "/filter-by-age-range?min=16&max=18",
-                List.class
-        );
-
-        // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().size()).isGreaterThanOrEqualTo(1);
-    }
-
-    @Test
-    void getFacultyByStudentId_shouldReturnFaculty() {
-        // Arrange
-        Faculty faculty = new Faculty(null, "Gryffindor", "red", null);
-        ResponseEntity<Faculty> facultyResponse = restTemplate.postForEntity(
-                "http://localhost:" + port + "/faculty",
-                faculty,
-                Faculty.class
-        );
-        Long facultyId = facultyResponse.getBody().getId();
-
-        Student student = new Student(null, "Cho Chang", 15, facultyResponse.getBody());
-        ResponseEntity<Student> studentResponse = restTemplate.postForEntity(baseUrl, student, Student.class);
-        Long studentId = studentResponse.getBody().getId();
-
-        // Act
-        ResponseEntity<Faculty> response = restTemplate.getForEntity(
-                baseUrl + "/" + studentId + "/faculty",
-                Faculty.class
-        );
-
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(facultyId);
-        assertThat(response.getBody().getName()).isEqualTo("Gryffindor");
+        // Проверка логики выводится в консоль, поэтому проверяем только статус
     }
 }

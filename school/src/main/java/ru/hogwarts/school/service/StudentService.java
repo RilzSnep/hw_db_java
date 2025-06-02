@@ -135,4 +135,59 @@ public class StudentService {
                 .average()
                 .orElse(0.0);
     }
+
+    public void printStudentNamesParallel() {
+        logger.info("Was invoked method for print student names in parallel");
+        List<Student> students = studentRepository.findAll();
+        if (students.size() < 6) {
+            logger.error("Not enough students to print (need at least 6, found {})", students.size());
+            throw new IllegalStateException("В базе должно быть минимум 6 студентов");
+        }
+
+        // Первые два имени в основном потоке
+        System.out.println("Main thread: " + students.get(0).getName());
+        System.out.println("Main thread: " + students.get(1).getName());
+
+        // Третий и четвертый студент в первом параллельном потоке
+        new Thread(() -> {
+            System.out.println("Thread 1: " + students.get(2).getName());
+            System.out.println("Thread 1: " + students.get(3).getName());
+        }).start();
+
+        // Пятый и шестой студент во втором параллельном потоке
+        new Thread(() -> {
+            System.out.println("Thread 2: " + students.get(4).getName());
+            System.out.println("Thread 2: " + students.get(5).getName());
+        }).start();
+    }
+
+    // Синхронизированный метод для вывода имени
+    public synchronized void printStudentName(String name, String threadName) {
+        System.out.println(threadName + ": " + name);
+    }
+
+    public void printStudentNamesSynchronized() {
+        logger.info("Was invoked method for print student names in synchronized mode");
+        List<Student> students = studentRepository.findAll();
+        if (students.size() < 6) {
+            logger.error("Not enough students to print (need at least 6, found {})", students.size());
+            throw new IllegalStateException("В базе должно быть минимум 6 студентов");
+        }
+
+        // Первые два имени в основном потоке
+        printStudentName(students.get(0).getName(), "Main thread");
+        printStudentName(students.get(1).getName(), "Main thread");
+
+        // Третий и четвертый студент в первом параллельном потоке
+        new Thread(() -> {
+            printStudentName(students.get(2).getName(), "Thread 1");
+            printStudentName(students.get(3).getName(), "Thread 1");
+        }).start();
+
+        // Пятый и шестой студент во втором параллельном потоке
+        new Thread(() -> {
+            printStudentName(students.get(4).getName(), "Thread 2");
+            printStudentName(students.get(5).getName(), "Thread 2");
+        }).start();
+    }
 }
